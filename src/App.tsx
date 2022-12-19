@@ -11,7 +11,7 @@ import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import QueryService from "./services/queries";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IQuery } from "./models";
 import { Alert, Snackbar } from "@mui/material";
 const theme = createTheme();
@@ -19,13 +19,19 @@ const theme = createTheme();
 function App() {
   const [query, setQuery] = useState<IQuery>();
   const [keyword, setKeyword] = useState<string>("");
-  const [hasError, setHasError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
 
+  useEffect(() => {
+    setKeyword("");
+  }, []);
+
   function handleCloseErrorAlert() {
-    setHasError(false);
     setErrorMessage("");
+  }
+
+  function handleCloseSuccess() {
+    setSuccessMessage("");
   }
 
   return (
@@ -50,6 +56,7 @@ function App() {
             >
               Competitor Price Analysis
             </Typography>
+
             <TextField
               name="keyword"
               required
@@ -62,34 +69,35 @@ function App() {
               }}
             />
 
-            {hasError && (
-              <Snackbar
-                open={hasError}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                autoHideDuration={6000}
+            <Snackbar
+              open={errorMessage !== ""}
+              anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+              autoHideDuration={6000}
+              onClose={handleCloseErrorAlert}
+            >
+              <Alert
                 onClose={handleCloseErrorAlert}
+                severity="error"
+                sx={{ width: "100%" }}
               >
-                <Alert
-                  onClose={handleCloseErrorAlert}
-                  severity="error"
-                  sx={{ width: "100%" }}
-                >
-                  {errorMessage}
-                </Alert>
-              </Snackbar>
-            )}
+                {errorMessage}
+              </Alert>
+            </Snackbar>
 
-            {successMessage && (
-              <Snackbar
-                open={successMessage !== ""}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                autoHideDuration={6000}
+            <Snackbar
+              open={successMessage !== ""}
+              anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+              autoHideDuration={6000}
+              onClose={handleCloseSuccess}
+            >
+              <Alert
+                severity="success"
+                sx={{ width: "100%" }}
+                onClose={handleCloseSuccess}
               >
-                <Alert severity="success" sx={{ width: "100%" }}>
-                  {successMessage}
-                </Alert>
-              </Snackbar>
-            )}
+                {successMessage}
+              </Alert>
+            </Snackbar>
 
             <Stack
               sx={{ pt: 4 }}
@@ -100,13 +108,12 @@ function App() {
               <Button
                 variant="contained"
                 onClick={() => {
-                  QueryService.getQuery(keyword, 3)
+                  QueryService.getQuery(keyword, 7)
                     .then((response) => {
                       if (
                         !response.data.success ||
                         !(response.status === 200)
                       ) {
-                        setHasError(true);
                         setErrorMessage(
                           "No products found for the given keyword. Please trigger the collector."
                         );
@@ -120,7 +127,6 @@ function App() {
                       setErrorMessage(
                         "No products found for the given keyword. Please trigger the collector."
                       );
-                      setHasError(true);
                       setQuery(undefined);
                       console.log("Query error", error);
                     });
@@ -137,7 +143,6 @@ function App() {
                         !response.data.success ||
                         !(response.status === 200)
                       ) {
-                        setHasError(true);
                         setErrorMessage(
                           "Collector could not be triggered. Please try again"
                         );
@@ -153,7 +158,6 @@ function App() {
                       setErrorMessage(
                         "Collector could not be triggered. Please try again "
                       );
-                      setHasError(true);
                       console.log("Collector trigger error", error);
                     });
                 }}
